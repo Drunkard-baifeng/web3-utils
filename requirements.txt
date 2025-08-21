@@ -1,0 +1,9 @@
+eth-account
+loguru
+web3
+bitcoinlib
+ecdsa
+mnemonic
+tronpy
+requests
+bech32
