@@ -37,10 +37,8 @@ dependencies = [
     "web3",
     "bitcoinlib",
     "ecdsa",
-    "bit",
     "mnemonic",
     "tronpy",
-    "base58",
     "requests",
     "bech32"
 ]
