@@ -56,3 +56,9 @@ packages = [
     "tron_wallet_utils",
     "cosmos_wallet_utils"
 ]
+
+# 包发现配置
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["*_wallet_utils*"]
+exclude = ["tests*", "web3env*", "*.egg-info*"]
