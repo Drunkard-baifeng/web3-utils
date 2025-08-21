@@ -5,7 +5,7 @@ Cosmos 钱包工具演示
 """
 
 from .wallet import CosmosWallet
-
+import time
 
 def demo_generate_new_wallet():
     """演示生成新钱包"""
@@ -107,6 +107,50 @@ def demo_multi_chain():
     print()
 
 
+def demo_transfer_functions():
+    """演示转账功能"""
+    print("=== 转账功能演示 ===")
+    
+    # Persistence主网LCD节点
+    paxi_lcd = 'https://mainnet-lcd.paxinet.io'
+    
+    # 创建钱包实例（连接到Persistence网络）
+    wallet = CosmosWallet(lcd_url=paxi_lcd)
+    
+    # 示例助记词和私钥（仅用于演示，请勿在生产环境使用）
+    mnemonic = "mercy swamp hamster hunt gaze doctor legal ranch cake badge blind subject"
+    to_address = "paxi109hp7zwd70mrq0mxajadteeknkf83c4lmghqnw"
+    
+    # 从助记词恢复钱包
+    success, wallet_info, error = wallet.recover_from_mnemonic(mnemonic, "paxi", 0)
+    if success:
+        print(f"发送方地址: {wallet_info.address}")
+        print(f"私钥: {wallet_info.private_key}")
+        
+        # 使用简化的转账接口（带等待确认功能）
+        success, tx_hash, error = wallet.transfer_coin(
+            private_key_hex=wallet_info.private_key,
+            to_address=to_address,  # 替换为实际的接收地址
+            amount=5.2,  # 转账金额（PAXI）
+            fee=0.006,    # 手续费（PAXI）
+            memo="Test transfer via Python SDK",
+            wait_for_confirmation=True,  # 等待交易确认
+            timeout=30  # 30秒超时
+        )
+        
+        if success:
+            print(f"转账结果: {error}")  # error字段包含详细的成功信息
+            print(f"交易哈希: {tx_hash}")
+        else:
+            print(f"转账失败: {error}")
+        
+    else:
+        print(f"恢复钱包失败: {error}")
+    
+    print()
+
+
+
 def main():
     """主演示函数"""
     print("Cosmos 钱包工具演示\n")
@@ -115,6 +159,7 @@ def main():
     demo_restore_from_mnemonic()
     demo_private_key_import()
     demo_multi_chain()
+    demo_transfer_functions()
 
 
 if __name__ == "__main__":
