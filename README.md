@@ -1,4 +1,4 @@
-# Web3 Wallet Utils
+# Web3 Utils
 
 🔐 **多链钱包工具集** - 支持 EVM、Bitcoin、Tron、Cosmos 生态的钱包生成和管理工具
 
@@ -18,23 +18,42 @@
 - ✅ 离线钱包生成（安全）
 - ✅ 标准 BIP-44 路径派生
 
-## 📦 安装依赖
+## 📦 安装
 
+### 从 GitHub 安装（推荐）
 ```bash
+pip install git+https://github.com/Drunkard-baifeng/web3-wallet-utils.git
+```
+
+### 从源码安装
+```bash
+# 克隆仓库
+git clone https://github.com/Drunkard-baifeng/web3-wallet-utils.git
+cd web3-wallet-utils
+
 # 创建虚拟环境
 python -m venv web3env
 source web3env/bin/activate  # Linux/Mac
 # 或 web3env\Scripts\activate  # Windows
 
-# 安装依赖
-pip install -r requirements.txt
+# 开发模式安装
+pip install -e .
 ```
 
 ## 🚀 快速开始
 
+### 简单导入
+```python
+# 一次性导入所有钱包类
+from web3_utils import EVMWallet, BTCWallet, TronWallet, CosmosWallet
+
+# 或者单独导入
+from web3_utils import CosmosWallet
+```
+
 ### EVM 钱包 (Ethereum/BSC/Polygon)
 ```python
-from evm_wallet_utils.wallet import EVMWallet
+from web3_utils import EVMWallet
 
 # 创建钱包实例
 wallet = EVMWallet()
@@ -53,7 +72,7 @@ success, restored_wallet, error = wallet.recover_wallet_from_mnemonic(mnemonic, 
 
 ### Bitcoin 钱包
 ```python
-from btc_wallet_utils.wallet import BTCWallet
+from web3_utils import BTCWallet
 
 wallet = BTCWallet()
 
@@ -67,7 +86,7 @@ if success:
 
 ### Tron 钱包
 ```python
-from tron_wallet_utils.wallet import TronWallet
+from web3_utils import TronWallet
 
 wallet = TronWallet()
 
@@ -80,7 +99,7 @@ if success:
 
 ### Cosmos 钱包 (支持多链)
 ```python
-from cosmos_wallet_utils.wallet import CosmosWallet
+from web3_utils import CosmosWallet
 
 wallet = CosmosWallet()
 
@@ -99,22 +118,26 @@ success, paxi_wallet, error = wallet.recover_from_mnemonic(mnemonic, "paxi", 0)
 ## 📁 项目结构
 
 ```
-web3_utils/
-├── evm_wallet_utils/          # EVM 生态钱包
-│   ├── wallet.py             # 核心钱包类
-│   └── demo.py               # 使用示例
-├── btc_wallet_utils/          # Bitcoin 钱包
-│   ├── wallet.py
-│   └── demo.py
-├── tron_wallet_utils/         # Tron 钱包
-│   ├── wallet.py
-│   ├── demo.py
-│   └── tron_monitor.py       # 链上监控
-├── cosmos_wallet_utils/       # Cosmos 生态钱包
-│   ├── wallet.py
-│   └── demo.py
-├── requirements.txt           # Python 依赖
-└── README.md                 # 项目文档
+web3_utils/                    # 项目根目录
+├── src/                       # 源代码目录
+│   └── web3_utils/           # 主包目录
+│       ├── __init__.py        # 包初始化文件
+│       ├── evm_wallet_utils/  # EVM 生态钱包
+│       │   ├── wallet.py     # 核心钱包类
+│       │   └── demo.py       # 使用示例
+│       ├── btc_wallet_utils/  # Bitcoin 钱包
+│       │   ├── wallet.py
+│       │   └── demo.py
+│       ├── tron_wallet_utils/ # Tron 钱包
+│       │   ├── wallet.py
+│       │   ├── demo.py
+│       │   └── tron_monitor.py # 链上监控
+│       └── cosmos_wallet_utils/ # Cosmos 生态钱包
+│           ├── wallet.py
+│           └── demo.py
+├── pyproject.toml            # 项目配置
+├── requirements.txt          # Python 依赖
+└── README.md                # 项目文档
 ```
 
 ## 🔐 安全提醒
@@ -143,10 +166,10 @@ web3_utils/
 ### 运行测试
 ```bash
 # 运行所有演示
-python -m evm_wallet_utils.demo
-python -m btc_wallet_utils.demo  
-python -m tron_wallet_utils.demo
-python -m cosmos_wallet_utils.demo
+python -m web3_utils.evm_wallet_utils.demo
+python -m web3_utils.btc_wallet_utils.demo  
+python -m web3_utils.tron_wallet_utils.demo
+python -m web3_utils.cosmos_wallet_utils.demo
 ```
 
 ### 添加新链支持
