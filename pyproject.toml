@@ -3,8 +3,8 @@ requires = ["setuptools>=45", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "web3-wallet-utils"
-version = "1.0.0"
+name = "web3-utils"
+version = "1.0.1"
 description = "🔐 多链钱包工具集 - 支持 EVM、Bitcoin、Tron、Cosmos 生态"
 authors = [
     {name = "baifeng", email = "1765311475@qq.com"}
@@ -57,7 +57,7 @@ packages = [
     "cosmos_wallet_utils"
 ]
 package-dir = {"" = "."}
-py-modules = ["web3_wallet_utils"]
+py-modules = ["web3_utils"]
 
 [tool.setuptools.package-data]
 "*" = ["*.py"]
