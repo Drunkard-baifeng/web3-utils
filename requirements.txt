@@ -7,3 +7,5 @@ mnemonic
 tronpy
 requests
 bech32
+cosmpy==0.11.1
+mospy-wallet==0.6.0

@@ -20,7 +20,6 @@ def demo_generate_new_wallet():
         print(f"Persistence 钱包:")
         print(f"助记词: {paxi_wallet.mnemonic}")
         print(f"私钥: {paxi_wallet.private_key}")
-        print(f"公钥: {paxi_wallet.public_key}")
         print(f"地址: {paxi_wallet.address}")
         print(f"索引: {paxi_wallet.index}")
     else:
@@ -47,13 +46,12 @@ def demo_restore_from_mnemonic():
     wallet = CosmosWallet()
     
     # 恢复钱包
-    success, restored_wallet, error = wallet.recover_from_mnemonic(mnemonic, "paxi", 1)
+    success, restored_wallet, error = wallet.recover_from_mnemonic(mnemonic, "paxi", 0)
     
     if success:
         print(f"恢复的 Persistence 钱包:")
         print(f"助记词: {restored_wallet.mnemonic}")
         print(f"私钥: {restored_wallet.private_key}")
-        print(f"公钥: {restored_wallet.public_key}")
         print(f"地址: {restored_wallet.address}")
         print(f"索引: {restored_wallet.index}")
     else:
@@ -80,7 +78,6 @@ def demo_private_key_import():
     if success:
         print(f"从私钥导入的钱包:")
         print(f"私钥: {wallet_info.private_key}")
-        print(f"公钥: {wallet_info.public_key}")
         print(f"地址: {wallet_info.address}")
     else:
         print(f"导入失败: {error}")

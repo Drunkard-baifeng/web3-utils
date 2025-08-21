@@ -1,7 +1,7 @@
-from tron_wallet_utils.wallet import TronWallet
+from .wallet import TronWallet
 from loguru import logger
 import json
-from tron_wallet_utils.tron_monitor import TronBlockScanner
+from .tron_monitor import TronBlockScanner
 import asyncio
 import signal
 from typing import Dict
