@@ -49,15 +49,10 @@ Repository = "https://github.com/Drunkard-baifeng/web3-wallet-utils"
 Issues = "https://github.com/Drunkard-baifeng/web3-wallet-utils/issues"
 Documentation = "https://github.com/Drunkard-baifeng/web3-wallet-utils#readme"
 
-[tool.setuptools]
-packages = [
-    "evm_wallet_utils",
-    "btc_wallet_utils", 
-    "tron_wallet_utils",
-    "cosmos_wallet_utils"
-]
-package-dir = {"" = "."}
-py-modules = ["web3_utils"]
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["web3_utils*"]
+exclude = ["tests*", "web3env*", "*.egg-info*"]
 
 [tool.setuptools.package-data]
 "*" = ["*.py"]
