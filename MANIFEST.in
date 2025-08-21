@@ -1,0 +1,9 @@
+include README.md
+include LICENSE
+include requirements.txt
+include pyproject.toml
+recursive-include *_wallet_utils *.py
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude web3env *
+exclude test.py
