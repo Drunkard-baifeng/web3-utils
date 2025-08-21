@@ -9,10 +9,10 @@ __author__ = "Baifeng"
 __email__ = "1765311475@qq.com"
 
 # 导入所有钱包类，方便直接使用
-from .evm_wallet_utils.wallet import EVMWallet
-from .btc_wallet_utils.wallet import BTCWallet
-from .tron_wallet_utils.wallet import TronWallet
-from .cosmos_wallet_utils.wallet import CosmosWallet
+from evm_wallet_utils.wallet import EVMWallet
+from btc_wallet_utils.wallet import BTCWallet
+from tron_wallet_utils.wallet import TronWallet
+from cosmos_wallet_utils.wallet import CosmosWallet
 
 # 定义公开接口
 __all__ = [
