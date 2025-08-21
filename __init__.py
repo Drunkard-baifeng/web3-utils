@@ -5,7 +5,7 @@ Web3 Wallet Utils - 多链钱包工具集
 """
 
 __version__ = "1.0.0"
-__author__ = "baifeng"
+__author__ = "Baifeng"
 __email__ = "1765311475@qq.com"
 
 # 导入所有钱包类，方便直接使用
