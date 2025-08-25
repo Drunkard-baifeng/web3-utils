@@ -230,7 +230,7 @@ class BTCWallet:
             return True, wallet, ""
             
         except Exception as e:
-            logger.error(f"生成BTC钱包失败: {str(e)}")
+            logger.error(f"生成钱包失败: {str(e)}")
             return False, None, str(e)
     
     # 使用助记词恢复钱包
@@ -278,7 +278,7 @@ class BTCWallet:
             return True, wallet, ""
             
         except Exception as e:
-            logger.error(f"从助记词恢复BTC钱包失败: {str(e)}")
+            logger.error(f"从助记词恢复钱包失败: {str(e)}")
             return False, None, str(e)
     
     # 使用私钥恢复钱包
@@ -326,7 +326,7 @@ class BTCWallet:
             ), ""
             
         except Exception as e:
-            logger.error(f"从私钥恢复BTC钱包失败: {str(e)}")
+            logger.error(f"从私钥恢复钱包失败: {str(e)}")
             return False, None, str(e)
     
     # 查询余额

@@ -1,12 +1,20 @@
 from tronpy import Tron
 from tronpy.providers import HTTPProvider
 from tronpy.keys import PrivateKey
-from typing import Dict, Any, Union, List
+from typing import Dict, Any, Union, List, Tuple
 from loguru import logger
 import time
 from mnemonic import Mnemonic
 import requests
 from tronpy.abi import trx_abi
+
+class Wallet:
+    def __init__(self, address: str, private_key: str, mnemonic: str, index: int):
+        self.address = address
+        self.private_key = private_key
+        self.mnemonic = mnemonic
+        self.index = index
+
 
 class TronWallet:
     def __init__(self, network: str = 'mainnet', api_key: Union[str, List[str]] = None, jw_token: str = None):
@@ -38,6 +46,72 @@ class TronWallet:
             'nile': 'https://nile.trongrid.io'
         }.get(network, 'https://api.trongrid.io')
         
+    
+    def generate_wallet(self, num_words: int = 12, address_index: int = 0) -> Tuple[bool, Wallet, str]:
+        """
+        创建助记词钱包，使用波场标准路径 m/44'/195'/0'/0/address
+        :param num_words: 与种子短语一起使用的单词数量。默认是12个单词。必须是[12,15,18,21,24]中的一个。
+        :param address_index: 地址索引，用于在同一账户下生成多个地址
+        """
+        try:
+
+            
+            account_info, mnemonic = self.client.generate_address_with_mnemonic(
+                num_words=num_words,
+                account_path=f"m/44'/195'/0'/0/{address_index}"
+            )
+            
+            return True, Wallet(account_info["base58check_address"], account_info["private_key"], mnemonic, address_index), ""
+        except Exception as e:
+            logger.error(f"生成钱包失败: {str(e)}")
+            return False, None, str(e)
+    
+    def recover_wallet_from_mnemonic(self, mnemonic: str, address_index: int = 0) -> Tuple[bool, Wallet, str]:
+        """
+        通过助记词恢复钱包，使用波场标准路径 m/44'/195'/0'/0/address
+        :param mnemonic: 助记词字符串
+        :param address_index: 地址索引，用于恢复特定地址
+        """
+        try:
+            # 验证助记词
+            mnemo = Mnemonic("english")
+            if not mnemo.check(mnemonic):
+                return False, None, "无效的助记词"
+            
+            # 从助记词恢复账户
+            account_info = self.client.generate_address_from_mnemonic(
+                mnemonic,
+                account_path=f"m/44'/195'/0'/0/{address_index}"
+            )
+            
+            return True, Wallet(account_info["base58check_address"], account_info["private_key"], mnemonic, address_index), ""
+        except Exception as e:
+            logger.error(f"从助记词恢复钱包失败: {str(e)}")
+            return False, None, str(e)
+
+    def recover_wallet_from_private_key(self, private_key: str) -> Tuple[bool, Wallet, str]:
+        """
+        通过私钥恢复地址
+        :param private_key: 私钥字符串（可以带0x前缀）
+        :return: 包含地址的字典
+        """
+        try:
+            # 移除0x前缀
+            if private_key.startswith("0x"):
+                private_key = private_key[2:]
+            
+            # 验证私钥格式
+            if not all(c in '0123456789abcdefABCDEF' for c in private_key) or len(private_key) != 64:
+                return False, None, "无效的私钥格式"
+            
+            # 从私钥生成地址
+            private_key_obj = PrivateKey(bytes.fromhex(private_key))
+            address_info = self.client.generate_address(priv_key=private_key_obj)
+            
+            return True, Wallet(address_info["base58check_address"], address_info["private_key"], "", 0), ""
+        except Exception as e:
+            logger.error(f"从私钥恢复钱包失败: {str(e)}")
+            return False, None, str(e)
         
     def get_account_info(self, address: str) -> Dict[str, Any]:
         """
@@ -62,7 +136,7 @@ class TronWallet:
             # 获取账户资源信息
             account_resource_info = self.client.get_account_resource(address)
             # logger.info(json.dumps(account_resource_info, indent=4))
-           
+            
             return {
                 "code": 200,
                 "message": "success",
@@ -148,7 +222,7 @@ class TronWallet:
                 "message": f"查询余额失败: {str(e)}",
                 "data": {}
             }
-     
+    
     def get_transaction_info(self, tx_id: str) -> Dict[str, Any]:
         """
         异步查询交易详情
@@ -478,9 +552,9 @@ class TronWallet:
             }
 
     def get_trx_transfers(self, 
-                          address: str,
-                          limit: int = 20,
-                          only_confirmed: bool = True) -> Dict[str, Any]:
+                        address: str,
+                        limit: int = 20,
+                        only_confirmed: bool = True) -> Tuple[bool, Dict[str, Any], str]:
         """
         查询TRX转账记录
         :param address: 要查询的地址
@@ -519,7 +593,7 @@ class TronWallet:
                     contract_data = tx.get("raw_data", {}).get("contract", [])[0]
                     if contract_data.get("type") != "TransferContract":
                         continue
-                   
+                    
                     status = tx.get("ret", [{}])[0].get("contractRet", "UNKNOWN")
                     
                     value_data = contract_data.get("parameter", {}).get("value", {})
@@ -679,152 +753,3 @@ class TronWallet:
                 "message": f"获取代币转账记录失败: {str(e)}",
                 "data": {}
             }
-
-    def create_wallet_by_private_key(self) -> Dict[str, Any]:
-        """
-        创建私钥钱包
-        :return: 包含私钥和地址的字典
-        """
-        try:
-            address_info = self.client.generate_address()
-            return {
-                "code": 200,
-                "message": "success",
-                "data": {
-                    "private_key": address_info["private_key"],
-                    "address": address_info["base58check_address"]
-                }
-            }
-        except Exception as e:
-            logger.error(f"创建私钥钱包失败: {str(e)}")
-            return {
-                "code": 500,
-                "message": f"创建私钥钱包失败: {str(e)}",
-                "data": {}
-            }
-  
-    def create_wallet_by_mnemonic(self,
-                               num_words: int = 12, 
-                               account_index: int = 0,
-                               address_index: int = 0) -> Dict[str, Any]:
-        """
-        创建助记词钱包，使用波场标准路径 m/44'/195'/account'/0/address
-        :param num_words: 与种子短语一起使用的单词数量。默认是12个单词。必须是[12,15,18,21,24]中的一个。
-        :param account_index: 账户索引，用于生成多个账户
-        :param address_index: 地址索引，用于在同一账户下生成多个地址
-        """
-        try:
-
-            
-            account_info, mnemonic = self.client.generate_address_with_mnemonic(
-                num_words=num_words,
-                account_path=f"m/44'/195'/{account_index}'/0/{address_index}"
-            )
-            
-            return {
-                "code": 200,
-                "message": "success",
-                "data": {
-                    "mnemonic": mnemonic,
-                    "private_key": account_info["private_key"],
-                    "address": account_info["base58check_address"],
-                    "path": f"m/44'/195'/{account_index}'/0/{address_index}"
-                }
-            }
-        except Exception as e:
-            logger.error(f"创建助记词钱包失败: {str(e)}")
-            return {
-                "code": 500,
-                "message": f"创建助记词钱包失败: {str(e)}",
-                "data": {}
-            }
-    
-    def recover_wallet_by_mnemonic(self,
-                                         mnemonic: str,
-                                account_index: int = 0,
-                                address_index: int = 0) -> Dict[str, Any]:
-        """
-        通过助记词恢复钱包，使用波场标准路径 m/44'/195'/account'/0/address
-        :param mnemonic: 助记词字符串
-        :param account_index: 账户索引，用于恢复特定账户
-        :param address_index: 地址索引，用于恢复特定地址
-        """
-        try:
-            # 验证助记词
-            mnemo = Mnemonic("english")
-            if not mnemo.check(mnemonic):
-                return {
-                    "code": 400,
-                    "message": "无效的助记词",
-                    "data": {}
-                }
-            
-            # 从助记词恢复账户
-            account_info = self.client.generate_address_from_mnemonic(
-                mnemonic,
-                account_path=f"m/44'/195'/{account_index}'/0/{address_index}"
-            )
-            
-            return {
-                "code": 200,
-                "message": "success",
-                "data": {
-                    "mnemonic": mnemonic,
-                    "private_key": account_info["private_key"],
-                    "address": account_info["base58check_address"],
-                    "path": f"m/44'/195'/{account_index}'/0/{address_index}"
-                }
-            }
-        except Exception as e:
-            logger.error(f"恢复助记词钱包失败: {str(e)}")
-            return {
-                "code": 500,
-                "message": f"恢复助记词钱包失败: {str(e)}",
-                "data": {}
-            }
-
-    def recover_address_by_private_key(self,
-                                            private_key: str) -> Dict[str, Any]:
-        """
-        通过私钥恢复地址
-        :param private_key: 私钥字符串（可以带0x前缀）
-        :return: 包含地址的字典
-        """
-        try:
-            # 移除0x前缀
-            if private_key.startswith("0x"):
-                private_key = private_key[2:]
-            
-            # 验证私钥格式
-            if not all(c in '0123456789abcdefABCDEF' for c in private_key) or len(private_key) != 64:
-                return {
-                    "code": 400,
-                    "message": "无效的私钥格式",
-                    "data": {}
-                }
-            
-            # 从私钥生成地址
-            private_key_obj = PrivateKey(bytes.fromhex(private_key))
-            address_info = self.client.generate_address(priv_key=private_key_obj)
-            
-            return {
-                "code": 200,
-                "message": "success",
-                "data": {
-                    "private_key": address_info["private_key"],
-                    "address": address_info["base58check_address"]
-                }
-            }
-        except Exception as e:
-            logger.error(f"通过私钥恢复地址失败: {str(e)}")
-            return {
-                "code": 500,
-                "message": f"通过私钥恢复地址失败: {str(e)}",
-                "data": {}
-            }
-
-    
-
-    
-
-    

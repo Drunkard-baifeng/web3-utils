@@ -58,9 +58,10 @@ class CosmosWallet:
             return success, wallet, error
             
         except Exception as e:
+            logger.error(f"生成钱包失败: {str(e)}")
             return False, None, str(e)
     
-    def recover_from_mnemonic(self, mnemonic: str, prefix: str = "cosmos", 
+    def recover_wallet_from_mnemonic(self, mnemonic: str, prefix: str = "cosmos", 
                             index: int = 0) -> Tuple[bool, Wallet, str]:
         """
         从助记词恢复钱包
@@ -102,9 +103,10 @@ class CosmosWallet:
             return True, wallet, ""
             
         except Exception as e:
+            logger.error(f"从助记词恢复钱包失败: {str(e)}")
             return False, None, str(e)
     
-    def recover_from_private_key(self, private_key_hex: str, 
+    def recover_wallet_from_private_key(self, private_key_hex: str, 
                                 prefix: str = "cosmos") -> Tuple[bool, Wallet, str]:
         """
         从私钥恢复钱包
@@ -135,6 +137,7 @@ class CosmosWallet:
             return True, wallet, ""
             
         except Exception as e:
+            logger.error(f"从私钥恢复钱包失败: {str(e)}")
             return False, None, str(e)
     
     def fetch_chain_id(self, lcd_url: str = None) -> Tuple[bool, str, str]:

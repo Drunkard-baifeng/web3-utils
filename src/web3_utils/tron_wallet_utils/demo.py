@@ -111,8 +111,14 @@ def main():
 
         # 测试创建助记词钱包（12个词）
         print("\n12. 测试创建助记词钱包(12词):")
-        wallet_12 = trc20.create_wallet_by_mnemonic(num_words=12)
-        logger.info(f"12词助记词钱包: {json.dumps(wallet_12, indent=2, ensure_ascii=False)}")
+        success, wallet_12, error = trc20.generate_wallet()
+        if success:
+            print(f"12词助记词钱包: {wallet_12.address}")
+            print(f"12词助记词钱包: {wallet_12.private_key}")
+            print(f"12词助记词钱包: {wallet_12.mnemonic}")
+            print(f"12词助记词钱包: {wallet_12.index}")
+        else:
+            print(f"创建钱包失败: {error}")
 
         # # 测试创建助记词钱包（24个词）
         # print("\n13. 测试创建助记词钱包(24词):")

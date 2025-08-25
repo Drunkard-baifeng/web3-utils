@@ -18,8 +18,8 @@ if __name__ == "__main__":
     # # BTC钱包测试
     # test_btc_wallet()
 
-    demo_generate_new_wallet()
-    demo_restore_from_mnemonic()
-    demo_transfer_functions()
+    # demo_generate_new_wallet()
+    # demo_restore_from_mnemonic()
+    # demo_transfer_functions()
     
-    # test_tron_wallet()
+    test_tron_wallet()
