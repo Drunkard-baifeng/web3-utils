@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Python](https://img.shields.io/badge/python-v3.8+-blue.svg)
-![Version](https://img.shields.io/badge/version-1.0.3-green.svg)
+![Version](https://img.shields.io/badge/version-1.0.4-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)
 
