@@ -12,7 +12,7 @@ from src.web3_utils.tron_wallet_utils.demo import test_wallet as test_tron_walle
 
 if __name__ == "__main__":
     # # EVM钱包测试
-    # test_wallet_offline()
+    test_wallet_offline()
     # test_wallet_online()
     
     # # BTC钱包测试
@@ -22,4 +22,4 @@ if __name__ == "__main__":
     # demo_restore_from_mnemonic()
     # demo_transfer_functions()
     
-    test_tron_wallet()
+    # test_tron_wallet()

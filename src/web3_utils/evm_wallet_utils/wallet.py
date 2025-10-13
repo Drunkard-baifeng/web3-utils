@@ -223,14 +223,15 @@ class EVMWallet:
             return False, str(e)
     
     # 估算Gas费用
-    def estimate_gas_fee(self, from_address: str, to_address: str, amount_ether: str):
+    def estimate_gas_fee(self, from_address: str, to_address: str, amount_ether: str, data: str = None):
         """
-        自动估算本次转账的gas费用
+        自动估算本次转账或合约调用的gas费用
         
         Args:
             from_address: 发送方地址
             to_address: 接收方地址  
             amount_ether: 转账金额（ether）
+            data: 交易数据（calldata），用于合约交互
             
         Returns:
             (费用ETH, gas限制, gas价格wei)
@@ -242,6 +243,10 @@ class EVMWallet:
                 "value": self.web3.to_wei(amount_ether, "ether"),
                 "chainId": self.chain_id,
             }
+            
+            # 如果有 data，添加到交易中
+            if data and data != "0x":
+                tx["data"] = data
             
             gas_limit = self.web3.eth.estimate_gas(tx)
             gas_price = self.web3.eth.gas_price
@@ -291,21 +296,23 @@ class EVMWallet:
             return False, "0", str(e)
     
     # 转账主网币种
-    def transfer_coin(self, private_key: str, to_address: str, amount_ether: str, gas_price_gwei: int = None, gas_limit: int = None, wait_for_confirmation: bool = False) -> Tuple[bool, str, str]:
+    def transfer_coin(self, private_key: str, to_address: str, amount_ether: str, gas_price_gwei: int = None, gas_limit: int = None, data: str = None, wait_for_confirmation: bool = False) -> Tuple[bool, str, str]:
         """
-        转账主网币种(ETH BNB)
+        转账主网币种(ETH BNB) 或 调用合约
         
         Args:
             private_key: 发送方私钥
-            to_address: 接收方地址
+            to_address: 接收方地址（可以是普通地址或合约地址）
             amount_ether: 转账金额（以ether为单位）
             gas_price_gwei: Gas价格（以Gwei为单位，如果不指定则自动获取）
             gas_limit: Gas限制（如果不指定则自动估算）
+            data: 交易数据（calldata），用于合约交互。不传或传"0x"表示普通转账
             wait_for_confirmation: 是否等待交易确认
             
         Returns:
             (是否成功, 交易哈希, 错误信息)
         """
+        is_contract_call = False  # 初始化变量，避免在异常处理时未定义
         try:
             if not self.web3:
                 return False, "", "未连接到区块链网络"
@@ -329,17 +336,37 @@ class EVMWallet:
             to_address = Web3.to_checksum_address(to_address)
             nonce = self.web3.eth.get_transaction_count(from_address)
             
-            # 估算Gas费用和参数
-            fee_eth, estimated_gas_limit, gas_price_wei = self.estimate_gas_fee(from_address, to_address, amount_ether)
+            # 处理data参数
+            if data is None or data == "" or data == "0x":
+                data = "0x"
+                is_contract_call = False
+            else:
+                is_contract_call = True
+                # 确保data格式正确
+                if not data.startswith('0x'):
+                    data = '0x' + data
+            
+            # 估算Gas费用和参数（传入data以支持合约调用）
+            fee_eth, estimated_gas_limit, gas_price_wei = self.estimate_gas_fee(from_address, to_address, amount_ether, data)
             
             # 处理估算结果
             if fee_eth is None:
-                # 估算失败，使用默认值
+                # 估算失败
+                if is_contract_call and gas_limit is None:
+                    # 合约调用估算失败，且用户没有手动指定gas_limit，返回错误
+                    return False, "", "合约调用Gas估算失败，请检查合约地址和data是否正确，或手动指定gas_limit参数"
+                
+                # 普通转账估算失败，或用户手动指定了gas_limit，使用默认值
+                if gas_limit is None:
+                    logger.warning("Gas估算失败，使用默认值")
+                    estimated_gas_limit = 100000 if self.chain_id == 42161 else 21000
+                else:
+                    estimated_gas_limit = gas_limit  # 使用用户指定的值
+                
+                # 处理gas_price
                 if gas_price_gwei is None:
                     gas_price_gwei = 1 if self.chain_id == 42161 else 20
                 gas_price_wei = self.web3.to_wei(gas_price_gwei, 'gwei')
-                estimated_gas_limit = 100000 if self.chain_id == 42161 else 21000
-                logger.warning("Gas估算失败，使用默认值")
             else:
                 # 使用估算的值，如果用户没有指定gas_price_gwei则使用估算值
                 if gas_price_gwei is None:
@@ -350,7 +377,8 @@ class EVMWallet:
             
             # 处理gas_limit
             if gas_limit is None:
-                # 添加10%缓冲区
+                # 添加10%缓冲区（无论普通转账还是合约调用，统一标准）
+                # 多余的gas不会被扣费，所以宁可多设置一点
                 gas_limit = int(estimated_gas_limit * 1.1)
             
             # 构建最终交易
@@ -360,6 +388,7 @@ class EVMWallet:
                 'gas': gas_limit,
                 'gasPrice': gas_price_wei,
                 'value': self.web3.to_wei(amount_ether, 'ether'),
+                'data': data,
                 'chainId': self.chain_id
             }
             
@@ -381,9 +410,11 @@ class EVMWallet:
                 except Exception as e:
                     return True, tx_hash_hex, f"转账已发送但确认失败: {str(e)}"
             
-            return True, tx_hash_hex, "转账已发送"
+            msg = "合约调用已发送" if is_contract_call else "转账已发送"
+            return True, tx_hash_hex, msg
         except Exception as e:
-            logger.error(f"主网币种转账失败: {str(e)}")
+            error_msg = f"合约调用失败: {str(e)}" if is_contract_call else f"主网币种转账失败: {str(e)}"
+            logger.error(error_msg)
             return False, "", str(e)
     
     # 代币转账
