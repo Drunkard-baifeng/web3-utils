@@ -223,7 +223,7 @@ class EVMWallet:
             return False, str(e)
     
     # 估算Gas费用
-    def estimate_gas_fee(self, from_address: str, to_address: str, amount_ether: str, data: str = None):
+    def estimate_gas_fee(self, from_address: str, to_address: str, amount_ether: str, data: str = None, gas_price_buffer: float = 1.2):
         """
         自动估算本次转账或合约调用的gas费用
         
@@ -232,6 +232,7 @@ class EVMWallet:
             to_address: 接收方地址  
             amount_ether: 转账金额（ether）
             data: 交易数据（calldata），用于合约交互
+            gas_price_buffer: gas价格缓冲比例，默认1.2（增加20%）
             
         Returns:
             (费用ETH, gas限制, gas价格wei)
@@ -260,6 +261,9 @@ class EVMWallet:
                     gas_price = self.web3.to_wei(50, 'gwei')
                 else:  # 以太坊主网
                     gas_price = self.web3.to_wei(20, 'gwei')
+            else:
+                # 增加缓冲比例，防止base fee上涨导致交易失败
+                gas_price = int(gas_price * gas_price_buffer)
             
             fee_wei = gas_limit * gas_price
             fee_eth = self.web3.from_wei(fee_wei, "ether")
@@ -296,7 +300,7 @@ class EVMWallet:
             return False, "0", str(e)
     
     # 转账主网币种
-    def transfer_coin(self, private_key: str, to_address: str, amount_ether: str, gas_price_gwei: int = None, gas_limit: int = None, data: str = None, wait_for_confirmation: bool = False) -> Tuple[bool, str, str]:
+    def transfer_coin(self, private_key: str, to_address: str, amount_ether: str, gas_price_gwei: int = None, gas_limit: int = None, data: str = None, gas_price_buffer: float = 1.2, gas_limit_buffer: float = 1.2, wait_for_confirmation: bool = False) -> Tuple[bool, str, str]:
         """
         转账主网币种(ETH BNB) 或 调用合约
         
@@ -307,6 +311,8 @@ class EVMWallet:
             gas_price_gwei: Gas价格（以Gwei为单位，如果不指定则自动获取）
             gas_limit: Gas限制（如果不指定则自动估算）
             data: 交易数据（calldata），用于合约交互。不传或传"0x"表示普通转账
+            gas_price_buffer: gas价格缓冲比例，默认1.2（增加20%）
+            gas_limit_buffer: gas限制缓冲比例，默认1.2（增加20%）
             wait_for_confirmation: 是否等待交易确认
             
         Returns:
@@ -347,7 +353,7 @@ class EVMWallet:
                     data = '0x' + data
             
             # 估算Gas费用和参数（传入data以支持合约调用）
-            fee_eth, estimated_gas_limit, gas_price_wei = self.estimate_gas_fee(from_address, to_address, amount_ether, data)
+            fee_eth, estimated_gas_limit, gas_price_wei = self.estimate_gas_fee(from_address, to_address, amount_ether, data, gas_price_buffer)
             
             # 处理估算结果
             if fee_eth is None:
@@ -377,9 +383,9 @@ class EVMWallet:
             
             # 处理gas_limit
             if gas_limit is None:
-                # 添加10%缓冲区（无论普通转账还是合约调用，统一标准）
+                # 添加缓冲比例（无论普通转账还是合约调用，统一标准）
                 # 多余的gas不会被扣费，所以宁可多设置一点
-                gas_limit = int(estimated_gas_limit * 1.1)
+                gas_limit = int(estimated_gas_limit * gas_limit_buffer)
             
             # 构建最终交易
             transaction = {
@@ -418,7 +424,7 @@ class EVMWallet:
             return False, "", str(e)
     
     # 代币转账
-    def transfer_token(self, private_key: str, to_address: str, amount: str, contract_address: str, contract_abi: list = None, gas_price_gwei: int = None, gas_limit: int = None, wait_for_confirmation: bool = False) -> Tuple[bool, str, str]:
+    def transfer_token(self, private_key: str, to_address: str, amount: str, contract_address: str, contract_abi: list = None, gas_price_gwei: int = None, gas_limit: int = None, gas_price_buffer: float = 1.2, gas_limit_buffer: float = 1.2, wait_for_confirmation: bool = False) -> Tuple[bool, str, str]:
         """
         代币转账
         
@@ -430,6 +436,8 @@ class EVMWallet:
             contract_abi: 合约ABI
             gas_price_gwei: Gas价格（以Gwei为单位，如果不指定则自动获取）
             gas_limit: Gas限制（如果不指定则自动估算）
+            gas_price_buffer: gas价格缓冲比例，默认1.2（增加20%）
+            gas_limit_buffer: gas限制缓冲比例，默认1.2（增加20%）
             wait_for_confirmation: 是否等待交易确认
             
         Returns:
@@ -483,6 +491,9 @@ class EVMWallet:
                         else:  # 以太坊主网
                             gas_price_wei = self.web3.to_wei(20, 'gwei')
                         logger.info(f"网络Gas价格为0，使用默认值: {self.web3.from_wei(gas_price_wei, 'gwei')} Gwei")
+                    else:
+                        # 增加缓冲比例，防止base fee上涨导致交易失败
+                        gas_price_wei = int(gas_price_wei * gas_price_buffer)
                 except Exception as e:
                     # 获取失败，使用默认值
                     if self.chain_id == 42161:  # Arbitrum
@@ -510,7 +521,7 @@ class EVMWallet:
             if gas_limit is None:
                 try:
                     estimated_gas = self.web3.eth.estimate_gas(txn)
-                    gas_limit = int(estimated_gas * 1.1)  # 添加10%缓冲区
+                    gas_limit = int(estimated_gas * gas_limit_buffer)  # 添加缓冲比例
                     logger.info(f"代币转账自动估算Gas: {estimated_gas}, 使用Gas: {gas_limit}")
                 except Exception as e:
                     # 估算失败，使用网络特定的默认值
