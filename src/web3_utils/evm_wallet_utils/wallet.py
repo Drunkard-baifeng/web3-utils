@@ -29,6 +29,52 @@ class SignMessage:
 class EVMWallet:
     """EVM钱包工具类"""
     
+    # 常见链ID与主网币名称映射
+    CHAIN_NATIVE_TOKENS = {
+        1: "ETH",           # 以太坊主网
+        5: "ETH",           # Goerli 测试网
+        11155111: "ETH",    # Sepolia 测试网
+        56: "BNB",          # BSC 主网
+        97: "BNB",          # BSC 测试网
+        137: "MATIC",       # Polygon 主网
+        80001: "MATIC",     # Polygon Mumbai 测试网
+        42161: "ETH",       # Arbitrum One
+        421613: "ETH",      # Arbitrum Goerli
+        10: "ETH",          # Optimism
+        420: "ETH",         # Optimism Goerli
+        43114: "AVAX",      # Avalanche C-Chain
+        43113: "AVAX",      # Avalanche Fuji 测试网
+        250: "FTM",         # Fantom Opera
+        4002: "FTM",        # Fantom 测试网
+        25: "CRO",          # Cronos 主网
+        338: "CRO",         # Cronos 测试网
+        8453: "ETH",        # Base
+        84531: "ETH",       # Base Goerli
+    }
+    
+    # 常见链ID与链名称映射
+    CHAIN_NAMES = {
+        1: "Ethereum",
+        5: "Goerli",
+        11155111: "Sepolia",
+        56: "BSC",
+        97: "BSC Testnet",
+        137: "Polygon",
+        80001: "Polygon Mumbai",
+        42161: "Arbitrum One",
+        421613: "Arbitrum Goerli",
+        10: "Optimism",
+        420: "Optimism Goerli",
+        43114: "Avalanche",
+        43113: "Avalanche Fuji",
+        250: "Fantom",
+        4002: "Fantom Testnet",
+        25: "Cronos",
+        338: "Cronos Testnet",
+        8453: "Base",
+        84531: "Base Goerli",
+    }
+    
     # 标准ERC-20合约ABI（适用于所有EVM兼容网络）
     STANDARD_ERC20_ABI = [
         {
@@ -85,6 +131,8 @@ class EVMWallet:
         # Web3连接
         self.web3 = None
         self.chain_id = chain_id
+        self.native_token = None  # 主网币名称
+        self.chain_name = None    # 链名称
         
         if rpc_url:
             try:
@@ -106,6 +154,11 @@ class EVMWallet:
         # 如果没有连接到网络且没有指定chain_id，使用默认值
         if self.chain_id is None:
             self.chain_id = 1  # 默认以太坊主网
+        
+        # 自动获取链信息
+        self.native_token = self.CHAIN_NATIVE_TOKENS.get(self.chain_id, "ETH")
+        self.chain_name = self.CHAIN_NAMES.get(self.chain_id, f"Chain {self.chain_id}")
+        logger.info(f"链: {self.chain_name} (ID: {self.chain_id}), 主网币: {self.native_token}")
     
     # 生成钱包
     def generate_wallet(self, index: int = 0) -> Tuple[bool, Wallet, str]:
@@ -468,7 +521,7 @@ class EVMWallet:
             if Decimal(token_balance) < Decimal(amount):
                 return False, "", f"代币余额不足，当前余额: {token_balance}"
             
-            # 检查ETH余额（用于支付Gas费）
+            # 检查主网币余额（用于支付Gas费）
             eth_balance_wei = self.web3.eth.get_balance(from_address)
             eth_balance_ether = self.web3.from_wei(eth_balance_wei, 'ether')
             
@@ -533,12 +586,12 @@ class EVMWallet:
                         gas_limit = 100000
                     logger.warning(f"代币转账Gas估算失败，使用默认值 {gas_limit}: {e}")
             
-            # 检查ETH余额是否足够支付Gas费
+            # 检查主网币余额是否足够支付Gas费
             estimated_gas_cost_wei = gas_limit * gas_price_wei
             estimated_gas_cost_ether = self.web3.from_wei(estimated_gas_cost_wei, 'ether')
             
             if Decimal(eth_balance_ether) < Decimal(estimated_gas_cost_ether):
-                return False, "", f"ETH余额不足支付Gas费，需要: {estimated_gas_cost_ether} ETH，当前余额: {eth_balance_ether} ETH"
+                return False, "", f"{self.native_token}余额不足支付Gas费，需要: {estimated_gas_cost_ether} {self.native_token}，当前余额: {eth_balance_ether} {self.native_token}"
             
             # 更新最终的gas限制
             txn['gas'] = gas_limit
